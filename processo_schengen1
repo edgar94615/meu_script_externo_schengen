@@ -1,0 +1,287 @@
+// ==UserScript==
+// @name         TESTE 2
+// @namespace    http://tampermonkey.net/
+// @version      x
+// @description  desde o preenchimento do formulario até gerar otp
+// @author       E.G
+// @match        https://visa.vfsglobal.com/*
+// @grant        none
+// ==/UserScript==
+
+(function () {
+    'use strict';
+
+    const dadosPassaportes = [
+        {
+            primeiroNome: 'EDGAR',
+            sobrenome: 'GOMES',
+            genero: 'Male',
+            dataNascimento: '04/11/1997',
+            nacionalidade: 'Angola',
+            numeroPassaporte: 'N3276283',
+            dataExpiracaoPassaporte: '17/05/2034',
+            codigoPais: '244',
+            numeroContato: '946156692',
+            email: 'EDGAR94615@HOTMAIL.COM',
+        },
+    ];
+
+    function simularDigitacao(campo, valor) {
+        if (!campo) {
+            console.error(`Campo não encontrado para o valor: ${valor}`);
+            return;
+        }
+        const eventoInput = new Event('input', { bubbles: true });
+        campo.focus();
+        campo.value = valor;
+        campo.dispatchEvent(eventoInput);
+        campo.blur();
+    }
+
+    function preencherCampos(index) {
+        const dados = dadosPassaportes[index];
+
+        const campoPrimeiroNome = document.querySelector('#mat-input-0') || document.querySelector('#mat-input-11') || document.querySelector('[id^="mat-input-"]');
+        simularDigitacao(campoPrimeiroNome, dados.primeiroNome);
+
+        const campoUltimoNome = document.querySelector('#mat-input-1') || document.querySelector('#mat-input-6') || document.querySelector('#mat-input-12') || document.querySelector('[id^="mat-input-"]');
+        simularDigitacao(campoUltimoNome, dados.sobrenome);
+
+        const campoDataNascimento = document.querySelector('#dateOfBirth') || document.querySelector('[placeholder="Please select the date"]');
+        simularDigitacao(campoDataNascimento, dados.dataNascimento);
+
+        const campoDataExpiracaoPassaporte = document.querySelector('#passportExpirtyDate');
+        simularDigitacao(campoDataExpiracaoPassaporte, dados.dataExpiracaoPassaporte);
+
+        const campoCodigoPais = document.querySelector('#mat-input-3') || document.querySelector('#mat-input-8') || document.querySelector('#mat-input-14') || document.querySelector('[id^="mat-input-"]');
+        simularDigitacao(campoCodigoPais, dados.codigoPais);
+
+        const campoNumeroContato = document.querySelector('#mat-input-4') || document.querySelector('#mat-input-9') || document.querySelector('#mat-input-15') || document.querySelector('[id^="mat-input-"]');
+        simularDigitacao(campoNumeroContato, dados.numeroContato);
+
+        const campoNumeroPassaporte = document.querySelector('#mat-input-2') || document.querySelector('#mat-input-7') || document.querySelector('#mat-input-13') || document.querySelector('[id^="mat-input-"]');
+        simularDigitacao(campoNumeroPassaporte, dados.numeroPassaporte);
+
+        const campoEmail = document.querySelector('#mat-input-10') || document.querySelector('#mat-input-16') || document.querySelector('[id^="mat-input-"]');
+        simularDigitacao(campoEmail, dados.email);
+
+        const campoGenero = document.querySelector('#mat-select-value-7') || document.querySelector('#mat-select-value-11');
+        if (campoGenero) {
+            campoGenero.click();
+            setTimeout(() => {
+                const genero = dados.genero === 'Male' ? 'Male' : 'Female';
+                const opcaoGenero = Array.from(document.querySelectorAll('mat-option')).find(option =>
+                    option.textContent.trim() === genero
+                );
+                if (opcaoGenero) {
+                    opcaoGenero.click();
+                    setTimeout(() => {
+                        document.body.click();
+                    }, 100);
+                } else {
+                    console.error('Opção de gênero não encontrada:', genero);
+                }
+            }, 100);
+        }
+
+        const campoNacionalidade = document.querySelector('.mat-mdc-select-trigger.ng-tns-c91-14');
+        if (campoNacionalidade) {
+            campoNacionalidade.click();
+            setTimeout(() => {
+                const opcaoAngola = Array.from(document.querySelectorAll('mat-option'))
+                    .find(option => option.textContent.trim().toLowerCase() === 'angola');
+
+                if (opcaoAngola) {
+                    opcaoAngola.click();
+                    setTimeout(() => {
+                        document.body.click();
+                    }, 100);
+                } else {
+                    console.error('Opção de nacionalidade "Angola" não encontrada');
+                }
+            }, 100);
+        }
+
+        realcarBotaoSalvar();
+        localizarERealcarSave();
+    }
+
+    function realcarBotaoSalvar() {
+        const botaoSalvar = document.querySelector('button[style*="background-color: rgb(255, 87, 34)"]:not([disabled])');
+        if (botaoSalvar && (botaoSalvar.textContent.trim().toLowerCase() === 'save' || botaoSalvar.textContent.trim().toLowerCase() === 'salvar')) {
+            botaoSalvar.style.backgroundColor = 'green';
+            botaoSalvar.style.color = 'white';
+            botaoSalvar.style.border = '2px solid darkgreen';
+            botaoSalvar.style.transition = 'background-color 0.3s, border-color 0.3s';
+            botaoSalvar.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+            console.error('Botão de Salvar não encontrado ou não possui a cor correta.');
+        }
+    }
+
+    function localizarERealcarSave() {
+        const botoesOuCampos = Array.from(document.querySelectorAll('button, input'));
+        const botaoSave = botoesOuCampos.find(el => el.textContent?.trim().toLowerCase() === 'save' || el.value?.toLowerCase() === 'save');
+        if (botaoSave) {
+            botaoSave.style.backgroundColor = 'blue';
+            botaoSave.style.color = 'white';
+            botaoSave.style.border = '2px solid navy';
+            botaoSave.style.transition = 'background-color 0.3s, border-color 0.3s';
+            botaoSave.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            // Simula o clique humano no botão
+            setTimeout(() => {
+                simularCliqueHumano(botaoSave);
+                aguardarEProcessarBotaoContinue(); // Espera pelo botão "Continue"
+            }, 300);
+        } else {
+            console.error('Campo ou botão com o texto "Save" não encontrado.');
+        }
+    }
+
+    // Nova função para aguardar o botão "Continue" e clicar nele
+    function aguardarEProcessarBotaoContinue() {
+        setTimeout(() => {
+            const botaoContinue = Array.from(document.querySelectorAll('button')).find(
+                (botao) => botao.textContent.trim().toLowerCase() === 'continue'
+            );
+
+            if (botaoContinue) {
+                botaoContinue.style.backgroundColor = 'green';
+                botaoContinue.style.color = 'white';
+                botaoContinue.style.border = '2px solid darkgreen';
+                botaoContinue.style.transition = 'background-color 0.3s, border-color 0.3s';
+                botaoContinue.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                simularCliqueHumano(botaoContinue);
+                aguardarEProcessarBotaoGerarOTP(); // Adiciona a chamada para processar o botão "Gerar OTP"
+            } else {
+                console.error('Botão "Continue" não encontrado.');
+            }
+        }, 3000);
+    }
+
+    // Função para aguardar o botão "Gerar OTP" e clicar nele
+    function aguardarEProcessarBotaoGerarOTP() {
+        setTimeout(() => {
+            const botaoGerarOTP = Array.from(document.querySelectorAll('button')).find(
+                (botao) => botao.textContent.trim().toLowerCase() === 'gerar otp' || botao.textContent.trim().toLowerCase() === 'generate otp'
+            );
+
+            if (botaoGerarOTP) {
+                botaoGerarOTP.style.backgroundColor = 'purple';
+                botaoGerarOTP.style.color = 'white';
+                botaoGerarOTP.style.border = '2px solid darkviolet';
+                botaoGerarOTP.style.transition = 'background-color 0.3s, border-color 0.3s';
+                botaoGerarOTP.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                simularCliqueHumano(botaoGerarOTP);
+            } else {
+                console.error('Botão "Gerar OTP" não encontrado.');
+            }
+        }, 3000);
+    }
+
+    function simularCliqueHumano(elemento) {
+        if (!elemento) {
+            console.error('Elemento não encontrado para simular o clique.');
+            return;
+        }
+
+        const rect = elemento.getBoundingClientRect();
+        const x = rect.left + rect.width / 2;
+        const y = rect.top + rect.height / 2;
+
+        const eventoMouseMove = new MouseEvent('mousemove', {
+            view: window,
+            bubbles: true,
+            cancelable: true,
+            clientX: x,
+            clientY: y,
+        });
+        document.dispatchEvent(eventoMouseMove);
+
+        elemento.focus();
+
+        const eventoMouseDown = new MouseEvent('mousedown', {
+            view: window,
+            bubbles: true,
+            cancelable: true,
+            clientX: x,
+            clientY: y,
+        });
+        elemento.dispatchEvent(eventoMouseDown);
+
+        const eventoMouseUp = new MouseEvent('mouseup', {
+            view: window,
+            bubbles: true,
+            cancelable: true,
+            clientX: x,
+            clientY: y,
+        });
+        elemento.dispatchEvent(eventoMouseUp);
+
+        const eventoClick = new MouseEvent('click', {
+            view: window,
+            bubbles: true,
+            cancelable: true,
+            clientX: x,
+            clientY: y,
+        });
+        elemento.dispatchEvent(eventoClick);
+    }
+
+    function interceptarTempoDeEspera() {
+        const originalSetTimeout = window.setTimeout;
+        window.setTimeout = function (callback, delay) {
+            if (delay === 30000) {
+                console.log('Ignorando tempo de espera de 30 segundos.');
+                delay = 0;
+            }
+            return originalSetTimeout(callback, delay);
+        };
+    }
+
+    function criarInterface() {
+        const container = document.createElement('div');
+        container.style.position = 'fixed';
+        container.style.top = '10px';
+        container.style.left = '155px';
+        container.style.zIndex = '9999';
+
+        const dropdown = document.createElement('select');
+        dropdown.style.padding = '10px';
+        dropdown.style.fontSize = '20px';
+        dropdown.style.color = '#ffffff';
+        dropdown.style.backgroundColor = 'red';
+        dropdown.style.border = 'none';
+        dropdown.style.borderRadius = '5px';
+
+        const defaultOption = document.createElement('option');
+        defaultOption.textContent = 'TESTE 2';
+        defaultOption.disabled = true;
+        defaultOption.selected = true;
+        dropdown.appendChild(defaultOption);
+
+        dadosPassaportes.forEach((dados, index) => {
+            const option = document.createElement('option');
+            option.value = index;
+            option.textContent = dados.primeiroNome;
+            dropdown.appendChild(option);
+        });
+
+        dropdown.addEventListener('change', () => {
+            const index = dropdown.value;
+            preencherCampos(index);
+        });
+
+        container.appendChild(dropdown);
+        document.body.appendChild(container);
+    }
+
+    window.addEventListener('load', () => {
+        interceptarTempoDeEspera();
+        setTimeout(criarInterface, 1000);
+    });
+
+})();
